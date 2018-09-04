@@ -1,12 +1,14 @@
 declare function require( name:string );
 
-let axios 	= require( 'axios' ),
-	async 	= require( 'async' ),
-	fs		= require( 'fs' ),
-	process = require( 'process' ),
-	md5		= require( 'md5' ),
-	jsdom 	= require( 'jsdom' ),
-	{ JSDOM } = jsdom;
+const	express	= require( 'express' ),
+		app		= express(),
+		axios 	= require( 'axios' ),
+		async 	= require( 'async' ),
+		fs		= require( 'fs' ),
+		process = require( 'process' ),
+		md5		= require( 'md5' ),
+		jsdom 	= require( 'jsdom' ),
+		{ JSDOM } = jsdom;
 
 let proxies = {},
 	proxies_good = [];
@@ -81,7 +83,7 @@ let worker = ( restart: boolean = false ) => {
 				console.log( 'Checking proxy ' + proxy[ 'proxy' ] + ' done' );
 				callback();
 			} ).catch( error => {
-				proxies[ i ][ 'rate' ] -= 10;
+				proxies[ i ][ 'rate' ] = -10;
 				proxies[ i ][ 'cd' ] = +new Date();
 				console.log( error );
 				callback();
@@ -95,3 +97,13 @@ let worker = ( restart: boolean = false ) => {
 };
 
 worker();
+
+app.get( '/', ( request, response ) => {
+	response.send( JSON.stringify( Object.values( proxies ).sort( ( a, b ) => {
+		if ( a[ 'rate' ] > b[ 'rate' ] ) return -1;
+		if ( a[ 'rate' ] < b[ 'rate' ] ) return 1;
+		return 0;
+	} ) ) );
+} );
+
+app.listen( 3000 );
