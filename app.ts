@@ -36,7 +36,8 @@ let lists = [ {
 							proxy: ip + ':' + port,
 							ip: ip,
 							port: port,
-							rate: 0
+							rate: 0,
+							cd: 0
 						};
 					}
 				} );
@@ -60,7 +61,7 @@ let worker = ( restart: boolean = false ) => {
 		list.cb( callback );
 	}, error => {
 		console.log( 'Checking' );
-		async.eachOfLimit( proxies, 50, ( proxy, i, callback ) => {
+		async.eachOfLimit( proxies, 200, ( proxy, i, callback ) => {
 			console.log( 'Checking proxy ' + proxy[ 'proxy' ] );
 			axios( {
 				url: 'http://markschk.ru/',
@@ -76,18 +77,19 @@ let worker = ( restart: boolean = false ) => {
 				} else {
 					proxies[ i ][ 'rate' ]--;
 				}
+				proxies[ i ][ 'cd' ] = +new Date();
 				console.log( 'Checking proxy ' + proxy[ 'proxy' ] + ' done' );
 				callback();
 			} ).catch( error => {
 				proxies[ i ][ 'rate' ] -= 10;
+				proxies[ i ][ 'cd' ] = +new Date();
 				console.log( error );
 				callback();
 			} );
 		}, error => {
-			debugger;
 			setTimeout( () => {
 				worker( true );
-			}, 1000 );
+			}, 10000 );
 		} );
 	} );
 };
